@@ -2,6 +2,9 @@ import codecs
 import os
 
 
+CODEC="UTF-8"
+
+
 class PixelCharException(Exception): pass
 
 
@@ -38,15 +41,15 @@ class PixelChar(object):
                     raise ValueError, "Found lines with different size: {0} and {1}".format(
                             prev_length, length)
                 prev_length = length
-                self.lines.append(line)
+                self.lines.append(line[:-1])
             
             if self.width() > PixelChar.MAX_WIDTH:
-                raise ValueError, "Exceeded the max width of the char '{0}': '{1}'".format(
+                raise ValueError, "One of its lines exceeded the max length '{0}': '{1}'".format(
                         PixelChar.MAX_WIDTH, self.width())
             if self.height() > PixelChar.MAX_HEIGHT:
-                raise ValueError, "Exceeded the max height of the char '{0}': '{1}'".format(
+                raise ValueError, "Exceeded the max height of the char represantation '{0}': '{1}'".format(
                         PixelChar.MAX_HEIGHT, self.height())
-        except (OSError, IOError, ValueError):
+        except (OSError, IOError, ValueError), e:
             error = u"Failed to load from '{0}': {1}".format(os.path.basename(fname), unicode(e))
         finally:
             if fh is not None:
@@ -67,3 +70,9 @@ class PixelChar(object):
     
     def __getitem__(self, i):
         return self.lines[i]
+    
+    
+    def setSpaced(self):
+        self.lines = []
+        for y in range(PixelChar.MAX_HEIGHT):
+            self.lines.append("".join(" " for i in range(PixelChar.MAX_WIDTH)))
