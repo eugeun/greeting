@@ -1,3 +1,10 @@
+import codecs
+import os
+
+
+class PixelCharException(Exception): pass
+
+
 class PixelChar(object):
     """ This class holds pixel represantation of the letter in the 'self.lines'
     """
@@ -7,15 +14,55 @@ class PixelChar(object):
     
     def __init__(self):
         self.name = ""
-        self.height = 0
-        self.width = 0
         self.lines = []
     
     
     def loadFromFile(self, fname):
-        """ Load char line by line with assumption that each line has the same width.
+        """ It takes 2 assumption:
+        - 'fname' is 'self.name' without extension (and therefor it should have only one letter length)
+        - all lines of the fname should be the same length.
         """
-        return
+        name = os.path.basename(fname).split(".")[0]
+        if len(name) > 1:
+            raise ValueError, "The name of the file is longer than one letter"
+        self.name = name
+        
+        error = None
+        fh = None
+        prev_length = 0
+        try:
+            fh = codecs.open(fname, CODEC)
+            for line in fh:
+                length = len(line)
+                if prev_length and prev_length != length:
+                    raise ValueError, "Found lines with different size: {0} and {1}".format(
+                            prev_length, length)
+                prev_length = length
+                self.lines.append(line)
+            
+            if self.width() > PixelChar.MAX_WIDTH:
+                raise ValueError, "Exceeded the max width of the char '{0}': '{1}'".format(
+                        PixelChar.MAX_WIDTH, self.width())
+            if self.height() > PixelChar.MAX_HEIGHT:
+                raise ValueError, "Exceeded the max height of the char '{0}': '{1}'".format(
+                        PixelChar.MAX_HEIGHT, self.height())
+        except (OSError, IOError, ValueError):
+            error = u"Failed to load from '{0}': {1}".format(os.path.basename(fname), unicode(e))
+        finally:
+            if fh is not None:
+                fh.close()
+            if error is not None:
+                raise PixelCharException, error
+    
+    
+    def width(self):
+        """ all lines should have the same size, so we can use any of them to get the char's width
+        """
+        return len(self.lines[0])
+    
+    
+    def height(self):
+        return len(self.lines)
     
     
     def __getitem__(self, i):
